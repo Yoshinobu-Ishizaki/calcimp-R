@@ -2,7 +2,7 @@
 # This file will be processed to create src/Makevars
 
 # Use the downloaded cephes-lib
-CEPHES_PATH = /home/yoshinobu/sdcard/develop/calcimp-R/.cephes-lib
+CEPHES_PATH = /media/yoshinobu/sdcard/develop/calcimp-R/.cephes-lib
 
 # pkg-config for glib-2.0 and gsl
 PKG_CFLAGS = $(shell pkg-config --cflags glib-2.0 gsl 2>/dev/null || echo "") -I$(CEPHES_PATH)

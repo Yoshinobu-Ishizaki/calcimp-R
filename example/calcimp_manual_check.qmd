@@ -1,0 +1,46 @@
+---
+title: "test_calcimp_manual"
+format: 
+  gfm:
+    df-print: kable
+---
+
+```{r}
+#| message: false
+#| warning: false
+#| 
+library(tidyverse)
+library(calcimp)
+```
+
+## simple test.men
+
+orginal C application result for [test.men](../sample/test.men) is saved as [test.imp](../sample/test.imp)
+
+```{r}
+ref <- read_csv("../sample/test.imp", show_col_types = FALSE)
+```
+
+Do calcimp for test.men with default parameters.
+
+```{r}
+rslt <- calcimp("../sample/test.men")
+```
+
+Compare two.
+
+```{r}
+ggplot() + 
+  geom_line(aes(x = freq, y = mag, color = "C"), data = ref) + 
+  geom_line(aes(x = freq, y = mag, color = "R"), data = rslt) + 
+  labs(title = "Calcimp comparison")
+```
+```{r}
+ref %>% head()
+```
+
+```{r}
+rslt %>% as_tibble() %>% head()
+```
+Same! Perfect!
+
