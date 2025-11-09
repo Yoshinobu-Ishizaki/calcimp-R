@@ -1,0 +1,12 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.git$
+^\.github$
+^README\.Rmd$
+^LICENSE\.md$
+^CLAUDE\.md$
+^\.DS_Store$
+^\.cephes-lib$
+^configure\.log$
+^src/Makevars\.in$
+
