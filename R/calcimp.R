@@ -4,6 +4,8 @@
 #' transmission theory. The tube geometry is specified in a mensur file
 #' (either .men or .xmen format).
 #'
+#' @useDynLib calcimp, .registration = TRUE
+#'
 #' @param filename Character string. Path to the mensur file (.men or .xmen format)
 #' @param max_freq Numeric. Maximum frequency in Hz (default: 2000.0)
 #' @param step_freq Numeric. Frequency step in Hz (default: 2.5)
@@ -93,8 +95,7 @@ calcimp <- function(filename,
                   temperature,
                   rad_calc,
                   dump_calc,
-                  sec_var_calc,
-                  PACKAGE = "calcimp")
+                  sec_var_calc)
 
   return(result)
 }
@@ -135,8 +136,7 @@ print_men <- function(filename) {
 
   # Call C function
   result <- .Call("r_print_men",
-                  filename,
-                  PACKAGE = "calcimp")
+                  filename)
 
   return(result)
 }

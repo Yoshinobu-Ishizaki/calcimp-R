@@ -63,8 +63,8 @@ else
         fi
     fi
 
-    # Configure and build
-    if ! ./configure; then
+    # Configure and build with -fPIC for shared library compatibility
+    if ! ./configure CFLAGS="-O2 -fPIC"; then
         echo "Error: Failed to configure cephes-lib"
         exit 1
     fi

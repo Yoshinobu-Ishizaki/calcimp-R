@@ -12,7 +12,7 @@
 
 #include "matutil.h"
 
-void error(char *message)
+void matutil_error(char *message)
 {
     fprintf(stderr, "\n%s\n", message);  exit(EXIT_FAILURE);
 }
@@ -43,7 +43,7 @@ vector new_vector(int n)
 {
     vector v;
     v = newvec(n);
-    if (v == NULL) error("記憶領域不足.");
+    if (v == NULL) matutil_error("記憶領域不足.");
     return v;
 }
 
@@ -51,7 +51,7 @@ matrix new_matrix(int nrow, int ncol)
 {
     matrix a;
     a = newmat(nrow, ncol);
-    if (a == NULL) error("記憶領域不足.");
+    if (a == NULL) matutil_error("記憶領域不足.");
     return a;
 }
 

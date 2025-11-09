@@ -19,7 +19,11 @@ The function `calcimp` should return dataframe that consists of 4 columns -- fre
 - tests folder are for unit test
 - sample contains sample data for calcimp function
 
+## Internationalization
 
+All messages and warnings are in English unless LANG environment variable is not specified.
+
+Change them based on LANG.
 
 ## Build and Test Commands
 

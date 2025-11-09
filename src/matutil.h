@@ -11,7 +11,7 @@
 typedef SCALAR *vector, **matrix;
 
 /* matutil.c */
-void error(char *message);
+void matutil_error(char *message);
 vector newvec(int n);
 matrix newmat(int nrow, int ncol);
 vector new_vector(int n);
