@@ -2,3 +2,8 @@
 ^\.Rproj\.user$
 ^\.git$
 ^\.github$
+^README\.Rmd$
+^LICENSE\.md$
+^CLAUDE\.md$
+^\.DS_Store$
+

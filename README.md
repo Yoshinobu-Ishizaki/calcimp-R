@@ -1,6 +1,6 @@
-# calcimp-python
+# calcimp-R
 
-Python C extension module for calculating input impedance of wind instrument tubes using acoustic transmission theory.
+C extension package for calculating input impedance of wind instrument tubes using acoustic transmission theory.
 
 管楽器の入力インピーダンスを音響伝送理論を用いて計算するPython C拡張モジュールです。
 
@@ -156,12 +156,11 @@ The build process will automatically handle cephes-lib download and compilation 
 
 ## 使用例 (Usage Example)
 
-```python
-import calcimp
-import numpy as np
+```R
+library(calcimp)
 
 # Calculate impedance for a tube geometry
-frequencies, real_part, imag_part, magnitude_db = calcimp.calcimp(
+impedance_dataframe = calcimp(
     "sample/test.men",      # Mensur file (tube geometry)
     max_freq=2000.0,        # Maximum frequency in Hz
     step_freq=2.5,          # Frequency step in Hz
@@ -171,9 +170,8 @@ frequencies, real_part, imag_part, magnitude_db = calcimp.calcimp(
     sec_var_calc=False      # Include effect by varying section area (experimental -- seems not adequate)
 )
 
-# Results are NumPy arrays
-print(f"Calculated {len(frequencies)} frequency points")
-print(f"Frequency range: {frequencies[0]:.1f} - {frequencies[-1]:.1f} Hz")
+# Results are returned as a dataframe (freq,real,imag,mag)
+impedance_dataframe
 ```
 
 Parameters can be omitted to use default values explicitly written in the example above.
