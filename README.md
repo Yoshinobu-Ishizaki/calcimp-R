@@ -1,21 +1,18 @@
 # calcimp-R
 
-C extension package for calculating input impedance of wind instrument tubes using acoustic transmission theory.
+R package for calculating input impedance of wind instrument tubes using acoustic transmission theory.
 
-管楽器の入力インピーダンスを音響伝送理論を用いて計算するPython C拡張モジュールです。
+管楽器の入力インピーダンスを音響伝送理論を用いて計算するRパッケージです。
 
-## 要件 (Requirements)
+## System Requirements
 
-### System Dependencies
+### Required Libraries
 
-**Required for all installation methods (including pre-built wheels):**
+**Required for installation and runtime:**
 
 ```bash
 # Ubuntu/Debian
-sudo apt-get install libglib2.0-0 libgsl27
-
-# For building from source, also install development packages:
-sudo apt-get install libglib2.0-dev libgsl-dev gcc python3-dev
+sudo apt-get install libglib2.0-dev libgsl-dev
 
 # macOS
 brew install glib gsl
@@ -24,169 +21,103 @@ brew install glib gsl
 pacman -S mingw-w64-x86_64-glib2 mingw-w64-x86_64-gsl
 ```
 
-### Python Dependencies
-- Python 3.13以上
-- numpy
-- matplotlib (for testing/visualization)
-
 ### External Library
+
 - **Cephes Math Library** (`libmd.a`) - Required for Bessel and Struve functions
-  - **Automatically downloaded and built during installation** when installing from git
-  - For manual builds, can be placed in `../cephes_lib/` or custom path via `CEPHES_PATH`
-  - Repository: https://github.com/Yoshinobu-Ishizaki/cephes-lib
+  - Must be built from source: https://github.com/Yoshinobu-Ishizaki/cephes-lib
+  - Default location: `~/sdcard/develop/cephes-lib/libmd.a`
+  - Can specify custom path via `CEPHES_PATH` environment variable
 
-## ビルド方法 (Build Instructions)
-
-### Build Dependencies
-
-When building from source (not needed for pre-built wheels), you'll need:
+### Building Cephes Library
 
 ```bash
-# Ubuntu/Debian - build tools for cephes-lib
-sudo apt-get install git autoconf automake libtool make gcc
-
-# macOS
-brew install autoconf automake libtool
+# Clone and build cephes-lib
+cd ~/sdcard/develop/
+git clone https://github.com/Yoshinobu-Ishizaki/cephes-lib.git
+cd cephes-lib
+./configure
+make
 ```
 
-The Cephes library will be **automatically downloaded and built** during installation. No manual setup required!
+This will create `libmd.a` in the cephes-lib directory.
 
-### Optional: CEPHES_PATH Environment Variable
+## Installation
 
-If you already have Cephes library built elsewhere, you can point to it:
+### Option 1: Install from GitHub (Recommended)
 
-```bash
-# Set CEPHES_PATH to your existing Cephes library location
-export CEPHES_PATH=/path/to/your/cephes_lib
+```r
+# Install devtools if not already installed
+install.packages("devtools")
 
-# Then build
-uv run python setup.py build
+# Install calcimp from GitHub
+devtools::install_github("Yoshinobu-Ishizaki/calcimp-R")
 ```
 
-The build process will search for cephes-lib in this order:
-1. `CEPHES_PATH` environment variable (if set)
-2. `../cephes-lib` (for local development)
-3. `../cephes_lib` (alternative naming)
-4. `.cephes-lib` (auto-downloaded during pip install)
+**Note:** Ensure system libraries (glib2, gsl) and cephes library are installed first.
 
-## インストール方法 (Installation)
+### Option 2: Install from Local Source
 
-### Option 1: Install Directly from Git (Easiest - Auto-builds)
-
-Install directly from GitHub repository. This will automatically download and build all dependencies including cephes-lib:
-
-```bash
-# Install from main branch
-pip install git+https://github.com/Yoshinobu-Ishizaki/calcimp-python.git
-
-# Or using uv
-uv pip install git+https://github.com/Yoshinobu-Ishizaki/calcimp-python.git
-
-# Install specific branch or tag
-pip install git+https://github.com/Yoshinobu-Ishizaki/calcimp-python.git@dev
-pip install git+https://github.com/Yoshinobu-Ishizaki/calcimp-python.git@v0.2.0
-```
-
-**Prerequisites:**
-- System dependencies (glib2, gsl) must be installed (see System Dependencies section)
-- Build tools (git, autoconf, automake, libtool, make, gcc) - see Build Dependencies section
-
-The cephes-lib will be automatically cloned and built during installation!
-
-### Option 2: Install Pre-built Wheel from GitHub Releases
-
-Pre-built wheel packages are available for Ubuntu, macOS, and Windows from GitHub Releases:
-
-**Prerequisites:**
-- System dependencies (glib2, gsl) must still be installed (see System Dependencies section)
-
-**Steps:**
-
-1. **Visit the Releases page:**
-   https://github.com/Yoshinobu-Ishizaki/calcimp-python/releases
-
-2. **Download the wheel for your platform:**
-   - **Ubuntu/Linux**: `calcimp_python-*-linux_*.whl`
-   - **macOS**: `calcimp_python-*-macosx_*.whl`
-   - **Windows**: `calcimp_python-*-win_*.whl`
-
-3. **Install the wheel:**
-```bash
-# Using pip
-pip install calcimp_python-*.whl
-
-# Or using uv
-uv pip install calcimp_python-*.whl
-```
-
-**Alternative: Using GitHub CLI**
-
-If you have GitHub CLI installed (https://cli.github.com/):
-
-```bash
-# List available releases
-gh release list --repo Yoshinobu-Ishizaki/calcimp-python
-
-# Download latest release wheels
-gh release download --repo Yoshinobu-Ishizaki/calcimp-python --pattern "*.whl"
-
-# Install
-pip install calcimp_python-*.whl
-```
-
-**Note for Development Builds:** GitHub Actions artifacts from recent commits are also available but expire after 90 days. See the Actions tab for development builds.
-
-### Option 3: Build from Source (Local Development)
-
-For local development, clone the repository and build:
-
-```bash
+```r
 # Clone the repository
-git clone https://github.com/Yoshinobu-Ishizaki/calcimp-python.git
-cd calcimp-python
+# git clone https://github.com/Yoshinobu-Ishizaki/calcimp-R.git
+# cd calcimp-R
 
-# Build and install in development mode (recommended)
-pip install -e .
-
-# Or using uv
-uv pip install -e .
+# In R:
+devtools::install()
 ```
 
-The build process will automatically handle cephes-lib download and compilation if needed.
+### Option 3: Development Installation
 
-## 使用例 (Usage Example)
+For active development:
 
-```R
+```r
+# Load package for interactive testing
+devtools::load_all()
+```
+
+## Usage Example
+
+```r
 library(calcimp)
 
 # Calculate impedance for a tube geometry
-impedance_dataframe = calcimp(
+result <- calcimp(
     "sample/test.men",      # Mensur file (tube geometry)
-    max_freq=2000.0,        # Maximum frequency in Hz
-    step_freq=2.5,          # Frequency step in Hz
-    temperature=24.0,        # Temperature in Celsius
-    rad_calc=calcimp.PIPE,   # Type of radiation at the output end (PIPE/BUFFLE/NONE)
-    dump_calc=True,         # Include dumping on the wall
-    sec_var_calc=False      # Include effect by varying section area (experimental -- seems not adequate)
+    max_freq = 2000.0,      # Maximum frequency in Hz
+    step_freq = 2.5,        # Frequency step in Hz
+    temperature = 24.0,     # Temperature in Celsius
+    rad_calc = PIPE,        # Radiation mode: NONE, PIPE, or BUFFLE
+    dump_calc = TRUE,       # Include damping on the wall
+    sec_var_calc = FALSE    # Include effect by varying section area (experimental)
 )
 
-# Results are returned as a dataframe (freq,real,imag,mag)
-impedance_dataframe
+# Result is a data frame with columns: freq, real, imag, mag
+head(result)
+
+# Plot magnitude spectrum
+plot(result$freq, result$mag, type="l",
+     xlab="Frequency (Hz)", ylab="Magnitude (dB)",
+     main="Input Impedance Spectrum")
+
+# Inspect tube geometry
+mensur <- print_men("sample/test.men")
+print(mensur)
 ```
 
-Parameters can be omitted to use default values explicitly written in the example above.
+### Parameters
 
-## テスト (Testing)
+All parameters except `filename` are optional:
 
-```bash
-cd test
-uv run python test_calcimp.py
-```
-
-The test will:
-- Calculate impedance for `sample/test.men`
-- Compare results with reference implementation
-- Generate output file: `test/test_pycalcimp.imp`
+- `filename`: Path to mensur file (.men or .xmen format) - **Required**
+- `max_freq`: Maximum frequency in Hz (default: 2000.0)
+- `step_freq`: Frequency step in Hz (default: 2.5)
+- `temperature`: Temperature in Celsius (default: 24.0)
+- `rad_calc`: Radiation impedance mode (default: PIPE)
+  - `NONE` (0): No radiation impedance
+  - `PIPE` (1): Pipe radiation
+  - `BUFFLE` (2): Baffled radiation
+- `dump_calc`: Enable wall damping (default: TRUE)
+- `sec_var_calc`: Enable section variation calculation (default: FALSE, experimental)
 
 ## Mensur File Formats
 
@@ -194,9 +125,7 @@ calcimp supports two file formats for describing tube geometry:
 
 ### 1. XMENSUR Format (.xmen)
 
-Recommended file format for calcimp-python.
-
-Python-style format with `#` comments, brackets, and expressions:
+Recommended format with Python-style syntax:
 
 ```
 # Trumpet with valve
@@ -216,20 +145,17 @@ bore_dia = 11.5  # Variable definition
 }
 ```
 
-**Key differences:**
-- Uses `#` for comments (like Python)
-- Supports Python arithmetic expressions and variables
-- Uses brackets `[]` for main grouping and `{}` for other grouping
-- Keywords: `OPEN_END`, `CLOSED_END`, `MAIN`, `END_MAIN`,`GROUP`, `END_GROUP`, `BRANCH`, `MERGE`,`SPLIT`,`INSERT`.
-- Aliases: `>` = BRANCH, `<` = MERGE, `|` = SPLIT, `@`=INSERT
+**Features:**
+- Uses `#` for comments
+- Supports arithmetic expressions and variables
+- Keywords: `OPEN_END`, `CLOSED_END`, `MAIN`, `END_MAIN`, `GROUP`, `END_GROUP`, `BRANCH`, `MERGE`, `SPLIT`, `INSERT`
+- Aliases: `>` = BRANCH, `<` = MERGE, `|` = SPLIT, `@` = INSERT
 
-**[See doc/xmensur.md](doc/xmensur.md)** for complete XMENSUR format specification.
+See [doc/xmensur.md](doc/xmensur.md) for complete specification.
 
 ### 2. ZMENSUR Format (.men)
 
-This is old format for mensur. Still recognize for backward compatibility.
-
-CSV-based format with `%` comments:
+Legacy CSV-based format (backward compatibility):
 
 ```
 # Basic tube
@@ -237,77 +163,96 @@ CSV-based format with `%` comments:
 10,0,0,         % Open end terminator
 ```
 
-**Extended features:**
-- Variable definitions and reusable sub-mensur sections
-- Tone holes with adjustable openness (`-name,ratio`)
-- Valve branches and detour routing (`>name,ratio` / `<name,ratio`)
+See [doc/zmensur.md](doc/zmensur.md) for complete specification.
 
-**[See doc/zmensur.md](doc/zmensur.md)** for complete ZMENSUR format specification.
+Both formats work seamlessly - the format is automatically detected from file extension.
 
-### Usage
+## Development
 
-Both formats work seamlessly - just use the appropriate file extension:
+### Build and Test Commands
 
-```python
-import calcimp
+```r
+# Load package for interactive testing
+devtools::load_all()
 
-# ZMENSUR format
-freq, real, imag, mag = calcimp.calcimp("instrument.men")
+# Generate documentation from roxygen comments
+devtools::document()
 
-# XMENSUR format (automatically converted)
-freq, real, imag, mag = calcimp.calcimp("instrument.xmen")
+# Run tests (if available)
+devtools::test()
+
+# Check package (comprehensive checks)
+devtools::check()
+
+# Install locally
+devtools::install()
+
+# Clean compiled code
+devtools::clean_dll()
 ```
 
-## トラブルシューティング (Troubleshooting)
+### Important Notes
+
+- Always register C functions in `src/init.c` - required for R CMD check
+- Use roxygen2 comments (`#'`) for documentation - they auto-generate .Rd files
+- Run `devtools::document()` after changing roxygen comments
+- Run `devtools::check()` before committing - catches most issues
+- **Memory management in C**: Always `PROTECT()` and `UNPROTECT()` R objects you create
+- Keep C code portable: Avoid platform-specific code unless necessary
+- Test edge cases: Empty files, invalid inputs, large data, etc.
+
+### Setting Custom Cephes Path
+
+If your cephes library is in a non-standard location:
+
+```bash
+# Set environment variable before installing
+export CEPHES_PATH=/path/to/your/cephes-lib
+R CMD INSTALL .
+```
+
+Or in your `~/.Renviron`:
+
+```
+CEPHES_PATH=/path/to/your/cephes-lib
+```
+
+## Troubleshooting
 
 ### Error: "Cephes library not found"
-```
-RuntimeError: Cephes library not found at /path/to/libmd.a
-Please set CEPHES_PATH environment variable or ensure libmd.a exists at ../cephes_lib/
-```
 
-**Solution:** Set `CEPHES_PATH` before building:
+**Solution:** Build cephes library or set `CEPHES_PATH`:
+
 ```bash
-export CEPHES_PATH=/correct/path/to/cephes_lib
-uv run python setup.py build
+# Build cephes library (see above)
+# Then set path
+export CEPHES_PATH=/path/to/cephes-lib
 ```
 
-### Error: "multiple definition of ..."
-**Solution:** Clean build directory and rebuild:
+### Error: "gsl not found" or "glib not found"
+
+**Solution:** Install system dependencies:
+
 ```bash
-rm -rf build/ dist/ *.egg-info
-uv run python setup.py build
+# Ubuntu/Debian
+sudo apt-get install libglib2.0-dev libgsl-dev
+
+# macOS
+brew install glib gsl
 ```
 
-### Crash when running
-**Solution:** Ensure GSL (GNU Scientific Library) is installed:
-```bash
-sudo apt-get install libgsl-dev
+### Compilation errors
+
+**Solution:** Clean and rebuild:
+
+```r
+devtools::clean_dll()
+devtools::load_all()
 ```
 
-## 開発者向け (For Developers)
+## License
 
-### Creating a Release
-
-To create a new release with pre-built wheels:
-
-1. **Create and push a version tag:**
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-2. **GitHub Actions will automatically:**
-   - Build wheels for Ubuntu, macOS, and Windows
-   - Run tests on all platforms
-   - Create a GitHub Release
-   - Upload wheels to the release
-
-3. **Tag naming convention:**
-   - Use semantic versioning: `v<major>.<minor>.<patch>`
-   - Examples: `v0.1.0`, `v1.0.0`, `v1.2.3`
-
-## ライセンス (License)
+MIT License
 
 Original code by Yoshinobu Ishizaki (1999)
 
@@ -316,16 +261,21 @@ Original code by Yoshinobu Ishizaki (1999)
 This project incorporates the following third-party libraries:
 
 - **Cephes Mathematical Library** by Stephen L. Moshier
-  - Provides special mathematical functions (Bessel, Struve, Airy functions)
+  - Special mathematical functions (Bessel, Struve, Airy functions)
   - Copyright (C) 1995 Stephen L. Moshier
   - http://www.netlib.org/cephes/
 
 - **TinyExpr** by Lewis Van Winkle
-  - Lightweight expression parser for mathematical expressions in XMENSUR files
+  - Expression parser for XMENSUR files
   - Copyright (c) 2015-2020 Lewis Van Winkle
   - https://github.com/codeplea/tinyexpr
   - Licensed under the zlib license
 
-## 参考文献 (References)
+## References
 
 - Fletcher & Rossing: "The Physics of Musical Instruments"
+
+## Related Projects
+
+- **calcimp-python**: Python version of this package
+  - https://github.com/Yoshinobu-Ishizaki/calcimp-python

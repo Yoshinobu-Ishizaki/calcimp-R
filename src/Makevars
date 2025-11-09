@@ -1,0 +1,17 @@
+# Makevars for calcimp R package
+# Compilation flags for C code with external dependencies
+
+# CEPHES_PATH can be set via environment variable or defaults to ../cephes-lib
+CEPHES_PATH ?= $(HOME)/sdcard/develop/cephes-lib
+
+# pkg-config for glib-2.0 and gsl
+PKG_CFLAGS = $(shell pkg-config --cflags glib-2.0 gsl) -I$(CEPHES_PATH)
+PKG_LIBS = $(shell pkg-config --libs glib-2.0 gsl) -L$(CEPHES_PATH) -lmd -lm
+
+# Additional compilation flags
+PKG_CFLAGS += -std=gnu99 -D_GNU_SOURCE
+
+# Source files to compile
+SOURCES = calcimp_r.c init.c acoustic_constants.c kutils.c zmensur.c xmensur.c \
+          xydata.c matutil.c tinyexpr.c
+OBJECTS = $(SOURCES:.c=.o)
