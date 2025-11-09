@@ -15,6 +15,15 @@
 #include <gsl/gsl_complex.h>
 #include <gsl/gsl_complex_math.h>
 
+#include <R.h>
+#include <Rinternals.h>
+
+/* R defines PI as a macro, but cephes needs PI as a variable.
+ * Undefine R's macro to allow cephes to use its own PI variable. */
+#ifdef PI
+#undef PI
+#endif
+
 #include "kutils.h"
 #include "zmensur.h"
 
@@ -1279,7 +1288,6 @@ void rad_imp( double frq,double d,double complex* zr, acoustic_constants *ac )
   double k;
   double j1_result, struve_result;
 
-
   k = PI2*frq/ac->c0;
 
   if( d <= 0.0 ) return; /* エラー処理がない! */
@@ -1299,12 +1307,18 @@ void rad_imp( double frq,double d,double complex* zr, acoustic_constants *ac )
 
   struve_result = struve(1, x);
 
+  if(getenv("DEBUG_RAD_CALC")){
+    Rprintf("DEBUG: x=%.6f, struve=%.6f\n",
+            x, struve_result);
+  }
+
   re = ac->rhoc0/s * ( 1 - j1_result/(k*a) );
-  im = ac->rhoc0/s * struve_result / (k*a);
-#if 0
-  printf( "radiation impedance is %f,%f at freq %f\n",c->r,c->i,\
-	  PI2 / k );
-#endif
+  im = ac->rhoc0 * struve_result /s/k/a ;
+
+  // if(getenv("DEBUG_RAD_CALC")){
+  //   Rprintf("DEBUG rad_imp PIPE: frq=%.2f, re=%.6f, im=%.6f, struve=%.6f, rhoc/s=%.6f, k*a=%.6f\n",
+  //           frq, re, im, struve_result, ac->rhoc0/s, k*a);
+  // }
 
   if( ac->rad_calc == BUFFLE ){
     *zr = re + I*im;

@@ -64,7 +64,8 @@ else
     fi
 
     # Configure and build with -fPIC for shared library compatibility
-    if ! ./configure CFLAGS="-O2 -fPIC"; then
+    # Use -O0 to disable optimization and avoid numerical precision issues
+    if ! ./configure CFLAGS="-O0 -fPIC"; then
         echo "Error: Failed to configure cephes-lib"
         exit 1
     fi
@@ -99,7 +100,9 @@ CEPHES_PATH = ${CEPHES_ABS_PATH}
 
 # pkg-config for glib-2.0 and gsl
 PKG_CFLAGS = \$(shell pkg-config --cflags glib-2.0 gsl 2>/dev/null || echo "") -I\$(CEPHES_PATH)
-PKG_LIBS = \$(shell pkg-config --libs glib-2.0 gsl 2>/dev/null || echo "-lglib-2.0 -lgsl -lgslcblas") -L\$(CEPHES_PATH) -lmd -lm
+# Use -Wl,-Bsymbolic to ensure cephes functions call their own symbols (e.g., gamma)
+# and -Wl,--whole-archive to include all objects from static library
+PKG_LIBS = \$(shell pkg-config --libs glib-2.0 gsl 2>/dev/null || echo "-lglib-2.0 -lgsl -lgslcblas") -Wl,--whole-archive \$(CEPHES_PATH)/libmd.a -Wl,--no-whole-archive -lm -Wl,-Bsymbolic
 
 # Additional compilation flags
 PKG_CFLAGS += -std=gnu99 -D_GNU_SOURCE
