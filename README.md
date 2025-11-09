@@ -52,7 +52,27 @@ R CMD INSTALL .
 
 ## Installation
 
-### Option 1: Install from GitHub (Recommended)
+### Option 1: Install Pre-built Binary (Easiest - Windows/macOS)
+
+Pre-built binary packages are automatically created for each release. This is the easiest option as it doesn't require compiling C code or installing system dependencies.
+
+**Windows:**
+```r
+# Replace VERSION with the actual version number (e.g., 0.2.0)
+install.packages("https://github.com/Yoshinobu-Ishizaki/calcimp-R/releases/download/vVERSION/calcimp_VERSION.zip",
+                 repos = NULL, type = "binary")
+```
+
+**macOS:**
+```r
+# Replace VERSION with the actual version number (e.g., 0.2.0)
+install.packages("https://github.com/Yoshinobu-Ishizaki/calcimp-R/releases/download/vVERSION/calcimp_VERSION.tgz",
+                 repos = NULL, type = "binary")
+```
+
+Visit the [releases page](https://github.com/Yoshinobu-Ishizaki/calcimp-R/releases) to find the latest version.
+
+### Option 2: Install from GitHub (Build from Source)
 
 The cephes library will be **automatically downloaded and built** during installation!
 
@@ -68,7 +88,7 @@ devtools::install_github("Yoshinobu-Ishizaki/calcimp-R")
 - System libraries (glib2, gsl) must be installed
 - Build tools (git, autoconf, automake, libtool, make, gcc) for auto-building cephes
 
-### Option 2: Install from Local Source
+### Option 3: Install from Local Source
 
 ```bash
 # Clone the repository
@@ -84,7 +104,7 @@ R CMD INSTALL .
 # devtools::install()
 ```
 
-### Option 3: Development Installation
+### Option 4: Development Installation
 
 For active development:
 
@@ -95,6 +115,16 @@ For active development:
 # Then in R:
 devtools::load_all()
 ```
+
+## Continuous Integration
+
+Binary packages for Windows, macOS, and Linux are automatically built and released whenever the main branch is updated. The build process:
+
+1. Builds binary packages for all three platforms
+2. Creates a GitHub release tagged with the version from DESCRIPTION
+3. Uploads the binary packages as release assets
+
+You can monitor the build status on the [Actions tab](https://github.com/Yoshinobu-Ishizaki/calcimp-R/actions).
 
 ## Usage Example
 
