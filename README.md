@@ -21,57 +21,78 @@ brew install glib gsl
 pacman -S mingw-w64-x86_64-glib2 mingw-w64-x86_64-gsl
 ```
 
-### External Library
+### External Library - Cephes (Automatically Downloaded)
 
 - **Cephes Math Library** (`libmd.a`) - Required for Bessel and Struve functions
-  - Must be built from source: https://github.com/Yoshinobu-Ishizaki/cephes-lib
-  - Default location: `~/sdcard/develop/cephes-lib/libmd.a`
-  - Can specify custom path via `CEPHES_PATH` environment variable
+  - **Automatically downloaded and built** during package installation
+  - Source: https://github.com/Yoshinobu-Ishizaki/cephes-lib
+  - The installation process will handle this for you!
 
-### Building Cephes Library
+**Build Dependencies (needed for auto-download):**
 
 ```bash
-# Clone and build cephes-lib
-cd ~/sdcard/develop/
-git clone https://github.com/Yoshinobu-Ishizaki/cephes-lib.git
-cd cephes-lib
-./configure
-make
+# Ubuntu/Debian - Required for building cephes-lib
+sudo apt-get install git autoconf automake libtool make gcc
+
+# macOS - Usually already installed with Xcode Command Line Tools
+xcode-select --install
 ```
 
-This will create `libmd.a` in the cephes-lib directory.
+**Optional: Using Pre-built Cephes Library**
+
+If you already have cephes-lib built elsewhere, you can skip the auto-download:
+
+```bash
+# Set CEPHES_PATH to your existing Cephes library location
+export CEPHES_PATH=/path/to/your/cephes-lib
+
+# Then install
+R CMD INSTALL .
+```
 
 ## Installation
 
 ### Option 1: Install from GitHub (Recommended)
 
+The cephes library will be **automatically downloaded and built** during installation!
+
 ```r
 # Install devtools if not already installed
 install.packages("devtools")
 
-# Install calcimp from GitHub
+# Install calcimp from GitHub (cephes will be auto-downloaded)
 devtools::install_github("Yoshinobu-Ishizaki/calcimp-R")
 ```
 
-**Note:** Ensure system libraries (glib2, gsl) and cephes library are installed first.
+**Prerequisites:**
+- System libraries (glib2, gsl) must be installed
+- Build tools (git, autoconf, automake, libtool, make, gcc) for auto-building cephes
 
 ### Option 2: Install from Local Source
 
-```r
+```bash
 # Clone the repository
-# git clone https://github.com/Yoshinobu-Ishizaki/calcimp-R.git
-# cd calcimp-R
+git clone https://github.com/Yoshinobu-Ishizaki/calcimp-R.git
+cd calcimp-R
 
-# In R:
-devtools::install()
+# The configure script will auto-download cephes-lib
+./configure
+
+# Install in R
+R CMD INSTALL .
+# Or use devtools in R:
+# devtools::install()
 ```
 
 ### Option 3: Development Installation
 
 For active development:
 
-```r
-# Load package for interactive testing
+```bash
+# Run configure to set up cephes-lib
+./configure
+
+# Then in R:
 devtools::load_all()
 ```
 

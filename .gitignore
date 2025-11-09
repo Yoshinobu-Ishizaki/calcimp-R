@@ -8,3 +8,12 @@ src/*.so
 src/*.dll
 .DS_Store
 
+# Downloaded cephes library
+.cephes-lib/
+
+# Generated Makevars
+src/Makevars.in
+
+# Configure log
+configure.log
+

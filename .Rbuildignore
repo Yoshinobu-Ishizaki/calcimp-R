@@ -6,4 +6,7 @@
 ^LICENSE\.md$
 ^CLAUDE\.md$
 ^\.DS_Store$
+^\.cephes-lib$
+^configure\.log$
+^src/Makevars\.in$
 

@@ -1,12 +1,30 @@
 # Makevars for calcimp R package
 # Compilation flags for C code with external dependencies
+#
+# This file is a fallback when configure script is not run.
+# The configure script will generate Makevars.in which takes precedence.
 
-# CEPHES_PATH can be set via environment variable or defaults to ../cephes-lib
-CEPHES_PATH ?= $(HOME)/sdcard/develop/cephes-lib
+# Try multiple locations for CEPHES_PATH
+# 1. Environment variable CEPHES_PATH
+# 2. Downloaded by configure: .cephes-lib (relative to package root)
+# 3. Common local development location
+# 4. User's home directory
+
+ifeq ($(CEPHES_PATH),)
+  ifneq ($(wildcard ../.cephes-lib/libmd.a),)
+    CEPHES_PATH = ../.cephes-lib
+  else ifneq ($(wildcard $(HOME)/sdcard/develop/cephes-lib/libmd.a),)
+    CEPHES_PATH = $(HOME)/sdcard/develop/cephes-lib
+  else ifneq ($(wildcard ../cephes-lib/libmd.a),)
+    CEPHES_PATH = ../cephes-lib
+  else
+    $(error "Cephes library not found. Please run ./configure or set CEPHES_PATH")
+  endif
+endif
 
 # pkg-config for glib-2.0 and gsl
-PKG_CFLAGS = $(shell pkg-config --cflags glib-2.0 gsl) -I$(CEPHES_PATH)
-PKG_LIBS = $(shell pkg-config --libs glib-2.0 gsl) -L$(CEPHES_PATH) -lmd -lm
+PKG_CFLAGS = $(shell pkg-config --cflags glib-2.0 gsl 2>/dev/null || echo "") -I$(CEPHES_PATH)
+PKG_LIBS = $(shell pkg-config --libs glib-2.0 gsl 2>/dev/null || echo "-lglib-2.0 -lgsl -lgslcblas") -L$(CEPHES_PATH) -lmd -lm
 
 # Additional compilation flags
 PKG_CFLAGS += -std=gnu99 -D_GNU_SOURCE
