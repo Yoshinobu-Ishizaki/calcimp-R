@@ -68,6 +68,31 @@ jobs:
             automake \
             libtool \
             make || echo "Some packages may already be installed"
+      # Clone and build cephes-lib
+      - name: Clone cephes-lib
+        run: |
+          git clone https://github.com/Yoshinobu-Ishizaki/cephes-lib.git .cephes_lib
+
+      - name: Build cephes-lib (Ubuntu/macOS)
+        if: runner.os != 'Windows'
+        working-directory: ../cephes_lib
+        run: |
+          aclocal
+          automake --add-missing
+          autoconf
+          ./configure CFLAGS="-fPIC -O2"
+          make
+
+      - name: Build cephes-lib (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        working-directory: ../cephes_lib
+        run: |
+          aclocal
+          automake --add-missing
+          autoconf
+          ./configure
+          make
 
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
