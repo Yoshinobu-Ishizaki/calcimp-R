@@ -143,21 +143,30 @@ print_men <- function(filename) {
 
 #' Radiation Impedance Calculation Modes
 #'
-#' Constants for specifying radiation impedance calculation mode in calcimp()
+#' These constants specify the mode used for calculating radiation impedance
+#' in \code{calcimp(..., rad_calc = 'NONE/BUFFLE/PIPE')}.
 #'
-#' @format NULL
+#' @details
+#' The available modes are:
+#' \itemize{
+#'   \item \code{NONE}: Do not compute radiation characteristics; simple open end.
+#'   \item \code{PIPE}: Radiation characteristics of a pipe without a flange (default).
+#'   \item \code{BUFFLE}: Radiation characteristics of a pipe with an infinite flange.
+#' }
+#'
+#' @format Integer constants.
+#' @name NONE
 #' @export
 NONE <- 0L
 
 #' @rdname NONE
-#' @format NULL
 #' @export
 PIPE <- 1L
 
 #' @rdname NONE
-#' @format NULL
 #' @export
 BUFFLE <- 2L
+
 
 #' Struve function 
 #' 
@@ -167,9 +176,9 @@ BUFFLE <- 2L
 #' 
 #' @param x Numeric value at which to evaluate struve(1, x)
 #' @return Numeric value of struve(1, x)
-#' @export
 #' @examples
 #' struve1(0.059978)  # Should return approximately 0.000763201
+#' @export
 struve1 <- function(x) {
   if (!is.numeric(x)) {
     stop("x must be numeric")
