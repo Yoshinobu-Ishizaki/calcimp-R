@@ -75,7 +75,7 @@ jobs:
 
       - name: Build cephes-lib (Ubuntu/macOS)
         if: runner.os != 'Windows'
-        working-directory: ../cephes_lib
+        working-directory: .cephes_lib
         run: |
           aclocal
           automake --add-missing
@@ -86,7 +86,7 @@ jobs:
       - name: Build cephes-lib (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}
-        working-directory: ../cephes_lib
+        working-directory: .cephes_lib
         run: |
           aclocal
           automake --add-missing
