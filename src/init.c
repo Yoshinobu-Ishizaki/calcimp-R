@@ -13,11 +13,13 @@ SEXP r_calcimp(SEXP filename_r, SEXP max_freq_r, SEXP step_freq_r,
                SEXP temperature_r, SEXP rad_calc_r, SEXP dump_calc_r,
                SEXP sec_var_calc_r);
 SEXP r_print_men(SEXP filename_r);
+SEXP r_struve1(SEXP x_sexp);
 
 /* Register C routines */
 static const R_CallMethodDef CallEntries[] = {
     {"r_calcimp", (DL_FUNC) &r_calcimp, 7},
     {"r_print_men", (DL_FUNC) &r_print_men, 1},
+    {"r_struve1", (DL_FUNC) &r_struve1, 1},
     {NULL, NULL, 0}
 };
 

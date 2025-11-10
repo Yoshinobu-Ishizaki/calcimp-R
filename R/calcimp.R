@@ -62,31 +62,31 @@ calcimp <- function(filename,
                     rad_calc = 1L,
                     dump_calc = TRUE,
                     sec_var_calc = FALSE) {
-
+  
   # Input validation
   if (!file.exists(filename)) {
     stop("File not found: ", filename)
   }
-
+  
   if (!is.numeric(max_freq) || max_freq <= 0) {
     stop("max_freq must be a positive number")
   }
-
+  
   if (!is.numeric(step_freq) || step_freq <= 0) {
     stop("step_freq must be a positive number")
   }
-
+  
   if (!is.numeric(temperature)) {
     stop("temperature must be a number")
   }
-
+  
   if (!is.numeric(rad_calc) || !(rad_calc %in% 0:2)) {
     stop("rad_calc must be 0 (NONE), 1 (PIPE), or 2 (BUFFLE)")
   }
-
+  
   # Convert to integer for C
   rad_calc <- as.integer(rad_calc)
-
+  
   # Call C function
   result <- .Call("r_calcimp",
                   filename,
@@ -96,7 +96,7 @@ calcimp <- function(filename,
                   rad_calc,
                   dump_calc,
                   sec_var_calc)
-
+  
   return(result)
 }
 
@@ -133,11 +133,11 @@ print_men <- function(filename) {
   if (!file.exists(filename)) {
     stop("File not found: ", filename)
   }
-
+  
   # Call C function
   result <- .Call("r_print_men",
                   filename)
-
+  
   return(result)
 }
 
@@ -158,3 +158,27 @@ PIPE <- 1L
 #' @format NULL
 #' @export
 BUFFLE <- 2L
+
+#' Struve function 
+#' 
+#' Just to test struve(1,x) works as expected.
+#' Sometimes due to symbol collision of gamma function in cephes and libm, 
+#' struve(1,x) returns wrong result.
+#' 
+#' @param x Numeric value at which to evaluate struve(1, x)
+#' @return Numeric value of struve(1, x)
+#' @export
+#' @examples
+#' struve1(0.059978)  # Should return approximately 0.000763201
+struve1 <- function(x) {
+  if (!is.numeric(x)) {
+    stop("x must be numeric")
+  }
+  if (length(x) != 1) {
+    warning("Only the first element of x will be used")
+    x <- x[1]
+  }
+  
+  result <- .Call("r_struve1", x)
+  return(result)
+}

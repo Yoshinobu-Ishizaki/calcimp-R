@@ -2,7 +2,7 @@
 # This file will be processed to create src/Makevars
 
 # Use the downloaded cephes-lib
-CEPHES_PATH = /media/yoshinobu/sdcard/develop/calcimp-R/.cephes-lib
+CEPHES_PATH = /home/yoshinobu/sdcard/develop/calcimp-R/.cephes-lib
 
 # pkg-config for glib-2.0 and gsl
 PKG_CFLAGS = $(shell pkg-config --cflags glib-2.0 gsl 2>/dev/null || echo "") -I$(CEPHES_PATH)
@@ -14,6 +14,6 @@ PKG_LIBS = $(shell pkg-config --libs glib-2.0 gsl 2>/dev/null || echo "-lglib-2.
 PKG_CFLAGS += -std=gnu99 -D_GNU_SOURCE
 
 # Source files to compile
-SOURCES = calcimp_r.c init.c acoustic_constants.c kutils.c zmensur.c xmensur.c \
+SOURCES = calcimp.c init.c acoustic_constants.c kutils.c zmensur.c xmensur.c \
           xydata.c matutil.c tinyexpr.c
 OBJECTS = $(SOURCES:.c=.o)
