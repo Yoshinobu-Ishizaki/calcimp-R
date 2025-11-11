@@ -13,8 +13,13 @@ for cmd in git autoconf automake libtool make; do
     fi
 done
 
-# Define cephes-lib location
-CEPHES_DIR=".cephes-lib"
+# Determine the source directory (where this configure script is located)
+# This is important because devtools::install() may run configure in a different directory
+SOURCE_DIR="$(cd "$(dirname "$0")" && pwd)"
+echo "Source directory: ${SOURCE_DIR}"
+
+# Define cephes-lib location relative to source directory
+CEPHES_DIR="${SOURCE_DIR}/.cephes-lib"
 CEPHES_LIB="${CEPHES_DIR}/libmd.a"
 CEPHES_HEADER="${CEPHES_DIR}/mconf.h"
 
@@ -23,8 +28,9 @@ if [ -n "${CEPHES_PATH}" ]; then
     echo "CEPHES_PATH is set to: ${CEPHES_PATH}"
     if [ -f "${CEPHES_PATH}/libmd.a" ]; then
         echo "Using existing cephes library at ${CEPHES_PATH}"
-        echo "PKG_CPPFLAGS=-I${CEPHES_PATH}" > src/Makevars.in
-        echo "PKG_LIBS=-L${CEPHES_PATH} -lmd -lm" >> src/Makevars.in
+        MAKEVARS_FILE="${SOURCE_DIR}/src/Makevars"
+        echo "PKG_CPPFLAGS=-I${CEPHES_PATH}" > "${MAKEVARS_FILE}"
+        echo "PKG_LIBS=-L${CEPHES_PATH} -lmd -lm" >> "${MAKEVARS_FILE}"
         exit 0
     else
         echo "Warning: CEPHES_PATH set but libmd.a not found at ${CEPHES_PATH}/libmd.a"
@@ -52,34 +58,50 @@ else
 
     # Build cephes-lib
     echo "Building cephes-lib..."
-    cd "${CEPHES_DIR}"
+    (
+        cd "${CEPHES_DIR}"
 
-    if [ ! -f "configure" ]; then
-        echo "Running autoreconf to generate configure script..."
-        autoreconf -i
-    fi
+        if [ ! -f "configure" ]; then
+            echo "Running autoreconf to generate configure script..."
+            autoreconf -i
+        fi
 
-    ./configure CFLAGS="-fPIC -O2"
-    make
-    cd ..
+        ./configure CFLAGS="-fPIC -O2"
+        make
+    )
 fi
 
 # Detect platform and set linker flags accordingly
 UNAME_S=$(uname -s)
 echo "Detected platform: ${UNAME_S}"
 
+# Create Makevars with absolute paths to cephes-lib
+MAKEVARS_FILE="${SOURCE_DIR}/src/Makevars"
+echo "Creating Makevars at: ${MAKEVARS_FILE}"
+
 if [ "$UNAME_S" = "Darwin" ]; then
     # macOS does not support --whole-archive or -Bsymbolic
-    echo "PKG_CPPFLAGS=-I${CEPHES_DIR}" > src/Makevars.in
-    echo "PKG_LIBS=${CEPHES_LIB} -lm" >> src/Makevars.in
+    echo "PKG_CPPFLAGS=-I${CEPHES_DIR}" > "${MAKEVARS_FILE}"
+    echo "PKG_LIBS=${CEPHES_LIB} -lm" >> "${MAKEVARS_FILE}"
 elif [ "$UNAME_S" = "Windows_NT" ]; then
     # Windows: keep it simple
-    echo "PKG_CPPFLAGS=-I${CEPHES_DIR}" > src/Makevars.in
-    echo "PKG_LIBS=${CEPHES_LIB} -lm" >> src/Makevars.in
+    echo "PKG_CPPFLAGS=-I${CEPHES_DIR}" > "${MAKEVARS_FILE}"
+    echo "PKG_LIBS=${CEPHES_LIB} -lm" >> "${MAKEVARS_FILE}"
 else
     # Linux and others
-    echo "PKG_CPPFLAGS=-I${CEPHES_DIR}" > src/Makevars.in
-    echo "PKG_LIBS=-Wl,--whole-archive ${CEPHES_LIB} -Wl,--no-whole-archive -lm -Wl,-Bsymbolic" >> src/Makevars.in
+    echo "PKG_CPPFLAGS=-I${CEPHES_DIR}" > "${MAKEVARS_FILE}"
+    echo "PKG_LIBS=-Wl,--whole-archive ${CEPHES_LIB} -Wl,--no-whole-archive -lm -Wl,-Bsymbolic" >> "${MAKEVARS_FILE}"
 fi
+
+# Add other compilation flags
+cat >> "${MAKEVARS_FILE}" << 'EOF'
+
+# Additional compilation flags
+PKG_CPPFLAGS += -std=gnu99 -D_GNU_SOURCE
+
+# pkg-config for glib-2.0 and gsl if available
+PKG_CPPFLAGS += $(shell pkg-config --cflags glib-2.0 gsl 2>/dev/null || echo "")
+PKG_LIBS += $(shell pkg-config --libs glib-2.0 gsl 2>/dev/null || echo "-lglib-2.0 -lgsl -lgslcblas")
+EOF
 
 echo "Configuration complete."
