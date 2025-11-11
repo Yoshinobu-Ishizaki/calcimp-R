@@ -21,13 +21,22 @@ ifndef CEPHES_PATH
   endif
 endif
 
-# MSYS2/MinGW paths for glib-2.0 and gsl
-# Assumes libraries are installed via MSYS2: pacman -S mingw-w64-x86_64-glib2 mingw-w64-x86_64-gsl
+# Base compilation flags
+PKG_CPPFLAGS = -I$(CEPHES_PATH) -std=gnu99 -D_GNU_SOURCE
 
-PKG_CPPFLAGS = -I$(CEPHES_PATH) -I${MINGW_PREFIX}/include/glib-2.0 \
-               -I${MINGW_PREFIX}/lib/glib-2.0/include -I${MINGW_PREFIX}/include
+# Base libraries - always needed
+PKG_LIBS = $(CEPHES_PATH)/libmd.a -lm
 
-PKG_LIBS = -L$(CEPHES_PATH) -lmd -lglib-2.0 -lgsl -lgslcblas -lm
+# Optional: Add glib-2.0 if available via MSYS2/MinGW
+# Note: glib may not be available on all Windows build environments (e.g., GitHub Actions)
+# If glib is required, install via MSYS2: pacman -S mingw-w64-x86_64-glib2
+ifdef MINGW_PREFIX
+  ifneq ($(wildcard ${MINGW_PREFIX}/include/glib-2.0),)
+    PKG_CPPFLAGS += -I${MINGW_PREFIX}/include/glib-2.0 -I${MINGW_PREFIX}/lib/glib-2.0/include
+    PKG_LIBS += -lglib-2.0
+  endif
+endif
 
-# Additional compilation flags
-PKG_CPPFLAGS += -std=gnu99 -D_GNU_SOURCE
+# Optional: Add GSL if available
+# If GSL is required, install via MSYS2: pacman -S mingw-w64-x86_64-gsl
+PKG_LIBS += -lgsl -lgslcblas
