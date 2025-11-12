@@ -4,12 +4,6 @@
 
 echo "Cleaning up calcimp R package..."
 
-# Remove downloaded cephes-lib
-if [ -d ".cephes-lib" ]; then
-    echo "Removing downloaded cephes-lib..."
-    rm -rf .cephes-lib
-fi
-
 # Remove generated Makevars files
 if [ -f "src/Makevars.in" ]; then
     echo "Removing generated src/Makevars.in..."

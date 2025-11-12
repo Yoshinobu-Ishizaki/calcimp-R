@@ -1,39 +1,59 @@
 /*
- * $Id: calcimp.c 3 2013-08-03 07:37:16Z yoshinobu $
- * calculate imput impedance of given mensur
- * 1999.05.03 - 
- * Yoshinobu Ishizkai
+ * calcimp_r.c
+ * R interface for calcimp - calculate input impedance of given mensur
+ * Adapted from Python version
+ * 1999.05.03 - Yoshinobu Ishizaki
  */
 
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
-#include <numpy/arrayobject.h>
+#include <R.h>
+#include <Rinternals.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-/* #include <math.h> */
-#include <getopt.h>
+#include <complex.h>
+#include <math.h>
 #include <glib.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_complex.h>
 #include <gsl/gsl_complex_math.h>
+#include "cephes.h"
 #include "kutils.h"
 #include "zmensur.h"
 #include "xmensur.h"
 #include "calcimp.h"
 #include "acoustic_constants.h"
 
+/**
+ * R interface for calcimp
+ *
+ * @param filename_r R character string: path to mensur file
+ * @param max_freq_r R numeric: maximum frequency in Hz
+ * @param step_freq_r R numeric: frequency step in Hz
+ * @param temperature_r R numeric: temperature in Celsius
+ * @param rad_calc_r R integer: radiation calculation mode (0=NONE, 1=PIPE, 2=BUFFLE)
+ * @param dump_calc_r R logical: enable wall damping
+ * @param sec_var_calc_r R logical: enable section variation calculation
+ * @return R data.frame with columns: freq, real, imag, mag
+ */
+SEXP r_calcimp(SEXP filename_r, SEXP max_freq_r, SEXP step_freq_r,
+               SEXP temperature_r, SEXP rad_calc_r, SEXP dump_calc_r,
+               SEXP sec_var_calc_r) {
 
-static PyObject* calculate_impedance(const char* filename, double max_freq, double step_freq,
-                                      unsigned long num_freq, double temperature,
-                                      int rad_calc, int dump_calc, int sec_var_calc) {
-    mensur *mensur;
+    /* Convert R arguments to C types */
+    const char* filename = CHAR(STRING_ELT(filename_r, 0));
+    double max_freq = asReal(max_freq_r);
+    double step_freq = asReal(step_freq_r);
+    double temperature = asReal(temperature_r);
+    int rad_calc = asInteger(rad_calc_r);
+    int dump_calc = asLogical(dump_calc_r) ? WALL : NONE;
+    int sec_var_calc = asLogical(sec_var_calc_r);
+
+    /* Variables for computation */
+    mensur *mensur_data;
     double complex *imp;
     int n_imp;
     double frq, mag, S;
     int i;
-    PyObject *freq_array, *real_array, *imag_array, *mag_array, *result_tuple;
-    npy_intp dims[1];
     acoustic_constants ac;
 
     /* Initialize acoustic constants based on temperature */
@@ -48,33 +68,27 @@ static PyObject* calculate_impedance(const char* filename, double max_freq, doub
     const char *ext = strrchr(filename, '.');
     if (ext != NULL && strcmp(ext, ".xmen") == 0) {
         /* XMENSUR format */
-        mensur = read_xmensur(filename);
+        mensur_data = read_xmensur(filename);
     } else {
         /* ZMENSUR format (default) */
-        mensur = read_mensur(filename);
+        mensur_data = read_mensur(filename);
     }
 
-    if (mensur == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read mensur file");
-        return NULL;
+    if (mensur_data == NULL) {
+        error("Failed to read mensur file: %s", filename);
     }
 
     /* Calculate number of points */
-    if (num_freq > 0) {
-        step_freq = max_freq / (double)num_freq;
-    }
-    n_imp = max_freq / step_freq + 1;
-    dims[0] = n_imp;
+    n_imp = (int)(max_freq / step_freq) + 1;
 
     /* Allocate memory for impedance calculations */
     imp = (double complex*)calloc(n_imp, sizeof(double complex));
     if (imp == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+        error("Failed to allocate memory for impedance calculation");
     }
 
     /* Get initial cross-sectional area */
-    S = PI * pow(get_first_men(mensur)->df, 2) / 4;
+    S = M_PI * pow(get_first_men(mensur_data)->df, 2) / 4;
 
     /* Calculate impedance */
     for (i = 0; i < n_imp; i++) {
@@ -82,33 +96,23 @@ static PyObject* calculate_impedance(const char* filename, double max_freq, doub
         if (i == 0) {
             imp[i] = 0.0;
         } else {
-            input_impedance(frq, mensur, 1, &imp[i], &ac);
+            input_impedance(frq, mensur_data, 1, &imp[i], &ac);
             imp[i] *= S;  /* Convert to acoustic impedance density */
         }
     }
 
-    /* Create numpy arrays */
-    freq_array = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
-    real_array = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
-    imag_array = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
-    mag_array = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
+    /* Create R vectors for output */
+    SEXP freq_vec = PROTECT(allocVector(REALSXP, n_imp));
+    SEXP real_vec = PROTECT(allocVector(REALSXP, n_imp));
+    SEXP imag_vec = PROTECT(allocVector(REALSXP, n_imp));
+    SEXP mag_vec = PROTECT(allocVector(REALSXP, n_imp));
 
-    if (!freq_array || !real_array || !imag_array || !mag_array) {
-        Py_XDECREF(freq_array);
-        Py_XDECREF(real_array);
-        Py_XDECREF(imag_array);
-        Py_XDECREF(mag_array);
-        free(imp);
-        PyErr_NoMemory();
-        return NULL;
-    }
+    double *freq_data = REAL(freq_vec);
+    double *real_data = REAL(real_vec);
+    double *imag_data = REAL(imag_vec);
+    double *mag_data = REAL(mag_vec);
 
-    /* Fill arrays with data */
-    double *freq_data = (double*)PyArray_DATA((PyArrayObject*)freq_array);
-    double *real_data = (double*)PyArray_DATA((PyArrayObject*)real_array);
-    double *imag_data = (double*)PyArray_DATA((PyArrayObject*)imag_array);
-    double *mag_data = (double*)PyArray_DATA((PyArrayObject*)mag_array);
-
+    /* Fill vectors with data */
     for (i = 0; i < n_imp; i++) {
         freq_data[i] = i * step_freq;
         real_data[i] = creal(imp[i]);
@@ -119,30 +123,43 @@ static PyObject* calculate_impedance(const char* filename, double max_freq, doub
 
     free(imp);
 
-    /* Create return tuple */
-    result_tuple = PyTuple_New(4);
-    if (!result_tuple) {
-        Py_DECREF(freq_array);
-        Py_DECREF(real_array);
-        Py_DECREF(imag_array);
-        Py_DECREF(mag_array);
-        return NULL;
-    }
+    /* Create data frame */
+    SEXP df = PROTECT(allocVector(VECSXP, 4));
+    SET_VECTOR_ELT(df, 0, freq_vec);
+    SET_VECTOR_ELT(df, 1, real_vec);
+    SET_VECTOR_ELT(df, 2, imag_vec);
+    SET_VECTOR_ELT(df, 3, mag_vec);
 
-    PyTuple_SET_ITEM(result_tuple, 0, freq_array);
-    PyTuple_SET_ITEM(result_tuple, 1, real_array);
-    PyTuple_SET_ITEM(result_tuple, 2, imag_array);
-    PyTuple_SET_ITEM(result_tuple, 3, mag_array);
+    /* Set column names */
+    SEXP col_names = PROTECT(allocVector(STRSXP, 4));
+    SET_STRING_ELT(col_names, 0, mkChar("freq"));
+    SET_STRING_ELT(col_names, 1, mkChar("real"));
+    SET_STRING_ELT(col_names, 2, mkChar("imag"));
+    SET_STRING_ELT(col_names, 3, mkChar("mag"));
+    setAttrib(df, R_NamesSymbol, col_names);
 
-    return result_tuple;
+    /* Set class to data.frame */
+    SEXP row_names = PROTECT(allocVector(INTSXP, 2));
+    INTEGER(row_names)[0] = NA_INTEGER;
+    INTEGER(row_names)[1] = -n_imp;
+    setAttrib(df, R_RowNamesSymbol, row_names);
+
+    SEXP df_class = PROTECT(allocVector(STRSXP, 1));
+    SET_STRING_ELT(df_class, 0, mkChar("data.frame"));
+    setAttrib(df, R_ClassSymbol, df_class);
+
+    UNPROTECT(8);  /* freq_vec, real_vec, imag_vec, mag_vec, df, col_names, row_names, df_class */
+    return df;
 }
 
-static PyObject* py_print_men(PyObject* self, PyObject* args) {
-    const char* filename;
-
-    if (!PyArg_ParseTuple(args, "s", &filename)) {
-        return NULL;
-    }
+/**
+ * R interface for print_men
+ *
+ * @param filename_r R character string: path to mensur file
+ * @return R data.frame with columns: df, db, r, comment (dimensions in mm)
+ */
+SEXP r_print_men(SEXP filename_r) {
+    const char* filename = CHAR(STRING_ELT(filename_r, 0));
 
     /* Read mensur file - detect format by extension */
     mensur *mensur_data;
@@ -151,120 +168,99 @@ static PyObject* py_print_men(PyObject* self, PyObject* args) {
         /* XMENSUR format */
         mensur_data = read_xmensur(filename);
         if (mensur_data == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "Failed to read XMENSUR file");
-            return NULL;
+            error("Failed to read XMENSUR file: %s", filename);
         }
     } else {
         /* ZMENSUR format */
         mensur_data = read_mensur(filename);
         if (mensur_data == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "Failed to read ZMENSUR file");
-            return NULL;
+            error("Failed to read ZMENSUR file: %s", filename);
         }
     }
 
-    /* Build list of tuples (df, db, r, comment) */
-    PyObject *result_list = PyList_New(0);
-    if (result_list == NULL) {
-        return NULL;
-    }
-
+    /* Count number of mensur elements */
+    int n_elements = 0;
     mensur *m = get_first_men(mensur_data);
     while (m != NULL) {
-        /* Create tuple (df, db, r, comment) - convert from meters to mm */
-        PyObject *tuple = Py_BuildValue("(ddds)",
-                                        m->df * 1000.0,  /* df in mm */
-                                        m->db * 1000.0,  /* db in mm */
-                                        m->r * 1000.0,   /* r in mm */
-                                        m->comment);     /* comment */
-        if (tuple == NULL) {
-            Py_DECREF(result_list);
-            return NULL;
-        }
-
-        if (PyList_Append(result_list, tuple) < 0) {
-            Py_DECREF(tuple);
-            Py_DECREF(result_list);
-            return NULL;
-        }
-        Py_DECREF(tuple);
-
+        n_elements++;
         m = m->next;
     }
 
-    return result_list;
-}
+    /* Create R vectors for output */
+    SEXP df_vec = PROTECT(allocVector(REALSXP, n_elements));
+    SEXP db_vec = PROTECT(allocVector(REALSXP, n_elements));
+    SEXP r_vec = PROTECT(allocVector(REALSXP, n_elements));
+    SEXP comment_vec = PROTECT(allocVector(STRSXP, n_elements));
 
-static PyObject* py_calcimp(PyObject* self, PyObject* args, PyObject* kwargs) {
-    const char* filename;
-    double max_freq = 2000.0;
-    double step_freq = 2.5;
-    unsigned long num_freq = 0;
-    double temperature = 24.0;
-    int rad_calc = PIPE;
-    int dump_calc_bool = 1;  /* True by default */
-    int sec_var_calc = FALSE;
-    int dump_calc;
-    static char* kwlist[] = {"filename", "max_freq", "step_freq", "num_freq", "temperature",
-                            "rad_calc", "dump_calc", "sec_var_calc", NULL};
+    double *df_data = REAL(df_vec);
+    double *db_data = REAL(db_vec);
+    double *r_data = REAL(r_vec);
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ddkdipp", kwlist,
-                                    &filename, &max_freq, &step_freq, &num_freq, &temperature,
-                                    &rad_calc, &dump_calc_bool, &sec_var_calc)) {
-        return NULL;
+    /* Fill vectors with data (convert from meters to mm) */
+    m = get_first_men(mensur_data);
+    int i = 0;
+    while (m != NULL) {
+        df_data[i] = m->df * 1000.0;  /* meters to mm */
+        db_data[i] = m->db * 1000.0;
+        r_data[i] = m->r * 1000.0;
+        SET_STRING_ELT(comment_vec, i, mkChar(m->comment ? m->comment : ""));
+        i++;
+        m = m->next;
     }
 
-    /* Convert boolean dump_calc to WALL/NONE */
-    dump_calc = dump_calc_bool ? WALL : NONE;
+    /* Create data frame */
+    SEXP df = PROTECT(allocVector(VECSXP, 4));
+    SET_VECTOR_ELT(df, 0, df_vec);
+    SET_VECTOR_ELT(df, 1, db_vec);
+    SET_VECTOR_ELT(df, 2, r_vec);
+    SET_VECTOR_ELT(df, 3, comment_vec);
 
-    return calculate_impedance(filename, max_freq, step_freq, num_freq, temperature,
-                               rad_calc, dump_calc, sec_var_calc);
+    /* Set column names */
+    SEXP col_names = PROTECT(allocVector(STRSXP, 4));
+    SET_STRING_ELT(col_names, 0, mkChar("df"));
+    SET_STRING_ELT(col_names, 1, mkChar("db"));
+    SET_STRING_ELT(col_names, 2, mkChar("r"));
+    SET_STRING_ELT(col_names, 3, mkChar("comment"));
+    setAttrib(df, R_NamesSymbol, col_names);
+
+    /* Set class to data.frame */
+    SEXP row_names = PROTECT(allocVector(INTSXP, 2));
+    INTEGER(row_names)[0] = NA_INTEGER;
+    INTEGER(row_names)[1] = -n_elements;
+    setAttrib(df, R_RowNamesSymbol, row_names);
+
+    SEXP df_class = PROTECT(allocVector(STRSXP, 1));
+    SET_STRING_ELT(df_class, 0, mkChar("data.frame"));
+    setAttrib(df, R_ClassSymbol, df_class);
+
+    UNPROTECT(8);  /* df_vec, db_vec, r_vec, comment_vec, df, col_names, row_names, df_class */
+    return df;
 }
 
-static PyMethodDef CalcimpMethods[] = {
-    {"calcimp", (PyCFunction)py_calcimp, METH_VARARGS | METH_KEYWORDS,
-     "Calculate input impedance of a tube.\n\n"
-     "Parameters:\n"
-     "    filename (str): Path to the mensur file\n"
-     "    max_freq (float, optional): Maximum frequency in Hz (default: 2000.0)\n"
-     "    step_freq (float, optional): Frequency step in Hz (default: 2.5)\n"
-     "    num_freq (int, optional): Number of frequency points (overrides step_freq if > 0)\n"
-     "    temperature (float, optional): Temperature in Celsius (default: 24.0)\n"
-     "    rad_calc (int, optional): Radiation impedance mode - PIPE, BUFFLE, or NONE (default: PIPE)\n"
-     "    dump_calc (bool, optional): Enable wall damping calculation (default: True)\n"
-     "    sec_var_calc (bool, optional): Enable section variation calculation (default: False)\n\n"
-     "Returns:\n"
-     "    tuple: (frequencies, real_part, imaginary_part, magnitude_db)"},
-    {"print_men", py_print_men, METH_VARARGS,
-     "Read and return mensur structure.\n\n"
-     "Parameters:\n"
-     "    filename (str): Path to the mensur file (.men or .xmen)\n\n"
-     "Returns:\n"
-     "    list: List of tuples (df, db, r, comment) where df, db, r are in mm"},
-    {NULL, NULL, 0, NULL}
-};
-
-static struct PyModuleDef calcimpmodule = {
-    PyModuleDef_HEAD_INIT,
-    "_calcimp_c",
-    "Extension module for calculating input impedance of tubes",
-    -1,
-    CalcimpMethods
-};
-
-PyMODINIT_FUNC PyInit__calcimp_c(void) {
-    PyObject *m;
-
-    import_array();  /* Initialize numpy */
-    m = PyModule_Create(&calcimpmodule);
-    if (m == NULL)
-        return NULL;
-
-    /* Export constants for radiation calculation modes */
-    PyModule_AddIntConstant(m, "NONE", NONE);
-    PyModule_AddIntConstant(m, "PIPE", PIPE);
-    PyModule_AddIntConstant(m, "BUFFLE", BUFFLE);
-
-    return m;
+/**
+ * R binding for struve function with v=1
+ * 
+ * @param x_sexp R numeric vector (only first element is used)
+ * @return R numeric value - result of struve(1, x)
+ */
+SEXP r_struve1(SEXP x_sexp) {
+  // Check input is numeric
+  if (!isReal(x_sexp) && !isInteger(x_sexp)) {
+    error("x must be numeric");
+  }
+  
+  // Convert to double
+  double x = asReal(x_sexp);
+  
+  // Check for invalid input
+  if (!R_finite(x)) {
+    error("x must be finite");
+  }
+  
+  // Call cephes struve function with v=1
+  double result = struve(1.0, x);
+  
+  // Return result as R numeric
+  return ScalarReal(result);
 }
 

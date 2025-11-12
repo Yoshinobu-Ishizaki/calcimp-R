@@ -6,7 +6,10 @@
 ^LICENSE\.md$
 ^CLAUDE\.md$
 ^\.DS_Store$
-^\.cephes-lib$
 ^configure\.log$
 ^src/Makevars\.in$
+^\.cephes-lib/\.git
+^\.cephes-lib/\.deps
+^\.cephes-lib/\.github
+^\.cephes-lib/.*\.o$
 

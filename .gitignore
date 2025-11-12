@@ -13,8 +13,10 @@ src/*.dll
 .cephes-lib/
 
 # Generated Makevars
+src/Makevars
 src/Makevars.in
+src/Makevars.win
 
-# Configure log
-configure.log
+# logs
+*.log
 

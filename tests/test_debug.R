@@ -1,5 +1,0 @@
-Sys.setenv(DEBUG_RAD_CALC = "1")
-library(calcimp)
-result <- calcimp("sample/test.men")
-cat("Result computed, first few rows:\n")
-print(head(result))
