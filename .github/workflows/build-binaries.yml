@@ -9,6 +9,10 @@ on:
       - main
   workflow_dispatch:  # Allow manual triggering
 
+# Grant permissions for the workflow to create releases
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ${{ matrix.config.os }}
@@ -185,6 +189,10 @@ jobs:
     runs-on: ubuntu-latest
     # Only create releases on push to main, not on pull requests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    # Explicitly set permissions for this job
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -203,8 +211,24 @@ jobs:
           echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
           echo "version=${PKG_VERSION}" >> $GITHUB_OUTPUT
 
+      - name: Check if release exists
+        id: check-release
+        run: |
+          TAG_NAME="v$(grep -oP 'Version: \K[0-9.]+' DESCRIPTION)"
+          if gh release view "$TAG_NAME" &>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Release $TAG_NAME already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Release $TAG_NAME does not exist"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        if: steps.check-release.outputs.exists != 'true'
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.create-tag.outputs.tag }}
           name: Release ${{ steps.create-tag.outputs.tag }}
