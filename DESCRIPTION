@@ -1,7 +1,7 @@
 Package: calcimp
 Type: Package
 Title: Calculate Input Impedance of Wind Instrument Tubes
-Version: 0.2.2
+Version: 0.2.3
 Authors@R: person("Yoshinobu", "Ishizaki", email = "ysnbiszk@gmail.com",
                   role = c("aut", "cre"))
 Description: Calculate the input impedance of wind instrument tubes using acoustic
